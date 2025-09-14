@@ -103,7 +103,7 @@ export default function Dashboard({ initialData }: { initialData: WhatsAppNumber
   const [showAtivosOnly, setShowAtivosOnly] = useState(false)
 
   // Adicionar os estados de ordenação após os outros estados
-  const [sortColumn, setSortColumn] = useState<"contato" | "api">("contato")
+  const [sortColumn, setSortColumn] = useState<"contato" | "api" | "dias_ativacao" | "dias_desconexao">("contato")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   // Criar uma única instância do cliente Supabase
@@ -218,7 +218,7 @@ export default function Dashboard({ initialData }: { initialData: WhatsAppNumber
   }
 
   // Adicionar a função de ordenação após a função isNumeroAtivo
-  const handleSort = (column: "contato" | "api") => {
+  const handleSort = (column: "contato" | "api" | "dias_ativacao" | "dias_desconexao") => {
     if (sortColumn === column) {
       // Se já estamos ordenando por esta coluna, alternar a direção
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
@@ -300,6 +300,48 @@ export default function Dashboard({ initialData }: { initialData: WhatsAppNumber
 
         // Caso contrário, ordenar alfabeticamente
         return sortDirection === "asc" ? apiA.localeCompare(apiB) : apiB.localeCompare(apiA)
+      } else if (sortColumn === "dias_ativacao") {
+        // Ordenação por dias de ativação
+        const diasA = a.ativado_em ? (() => {
+          try {
+            const date = a.ativado_em.includes("T") ? new Date(a.ativado_em) : parseISO(a.ativado_em)
+            return isNaN(date.getTime()) ? 0 : differenceInDays(today, date)
+          } catch {
+            return 0
+          }
+        })() : 0
+        
+        const diasB = b.ativado_em ? (() => {
+          try {
+            const date = b.ativado_em.includes("T") ? new Date(b.ativado_em) : parseISO(b.ativado_em)
+            return isNaN(date.getTime()) ? 0 : differenceInDays(today, date)
+          } catch {
+            return 0
+          }
+        })() : 0
+        
+        return sortDirection === "asc" ? diasA - diasB : diasB - diasA
+      } else if (sortColumn === "dias_desconexao") {
+        // Ordenação por dias de desconexão
+        const diasA = a.desconectado_em ? (() => {
+          try {
+            const date = a.desconectado_em.includes("T") ? new Date(a.desconectado_em) : parseISO(a.desconectado_em)
+            return isNaN(date.getTime()) ? 0 : differenceInDays(today, date)
+          } catch {
+            return 0
+          }
+        })() : 0
+        
+        const diasB = b.desconectado_em ? (() => {
+          try {
+            const date = b.desconectado_em.includes("T") ? new Date(b.desconectado_em) : parseISO(b.desconectado_em)
+            return isNaN(date.getTime()) ? 0 : differenceInDays(today, date)
+          } catch {
+            return 0
+          }
+        })() : 0
+        
+        return sortDirection === "asc" ? diasA - diasB : diasB - diasA
       }
       return 0
     })
@@ -1083,7 +1125,20 @@ export default function Dashboard({ initialData }: { initialData: WhatsAppNumber
                 <TableHead className="font-bold">CPF</TableHead>
                 <TableHead className="font-bold">Ativação</TableHead>
                 <TableHead className="font-bold">Aparelho</TableHead>
-                <TableHead className="font-bold">Dias</TableHead>
+                <TableHead className="font-bold cursor-pointer" onClick={() => handleSort("dias_ativacao")}>
+                  <div className="flex items-center gap-1">
+                    Dias
+                    {sortColumn === "dias_ativacao" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </div>
+                </TableHead>
                 <TableHead className="font-bold cursor-pointer" onClick={() => handleSort("api")}>
                   <div className="flex items-center gap-1">
                     API
@@ -1099,7 +1154,20 @@ export default function Dashboard({ initialData }: { initialData: WhatsAppNumber
                   </div>
                 </TableHead>
                 <TableHead className="font-bold">Desconexão</TableHead>
-                <TableHead className="font-bold">Dias</TableHead>
+                <TableHead className="font-bold cursor-pointer" onClick={() => handleSort("dias_desconexao")}>
+                  <div className="flex items-center gap-1">
+                    Dias
+                    {sortColumn === "dias_desconexao" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-4 w-4 opacity-50" />
+                    )}
+                  </div>
+                </TableHead>
                 <TableHead className="font-bold">Recarga</TableHead>
                 <TableHead className="font-bold">Ações</TableHead>
               </TableRow>
